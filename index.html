@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成績輸入系統</title>
+    <!-- 引入 Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input[type="text"], input[type="number"], input[type="submit"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .message {
+            color: green;
+            text-align: center;
+            margin-top: 10px;
+        }
+        #scoreList {
+            margin-top: 20px;
+        }
+        #scoreList ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #scoreList li {
+            padding: 8px;
+            margin-bottom: 5px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>成績輸入系統</h1>
+        <form id="scoreForm">
+            <div class="form-group">
+                <label for="studentName">學生姓名</label>
+                <input type="text" id="studentName" placeholder="輸入學生姓名" required>
+            </div>
+            <div class="form-group">
+                <label for="studentScore">學生成績</label>
+                <input type="number" id="studentScore" placeholder="輸入學生成績" required min="0" max="100">
+            </div>
+            <input type="submit" value="提交成績">
+        </form>
+
+        <div id="message" class="message"></div>
+
+        <div id="scoreList">
+            <h2>已提交成績</h2>
+            <ul id="scoreItems"></ul>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import Firebase SDK 模組
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+        // Firebase 配置，包括 databaseURL
+        const firebaseConfig = {
+            apiKey: "AIzaSyDdLQpES2P4NfhxzzoOPkAE80hJ5bGWnDE",
+            authDomain: "web1113-41041225.firebaseapp.com",
+            projectId: "web1113-41041225",
+            storageBucket: "web1113-41041225.firebasestorage.app",
+            messagingSenderId: "72233532454",
+            appId: "1:72233532454:web:5c66a7424f8b83b7ca7ae7",
+            databaseURL: "https://web1113-41041225-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        };
+
+        // 初始化 Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // 表單提交事件
+        document.getElementById('scoreForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // 防止表單重新載入頁面
+
+            const studentName = document.getElementById('studentName').value;
+            const studentScore = document.getElementById('studentScore').value;
+
+            // 檢查表單是否有空欄位
+            if (!studentName || !studentScore) {
+                document.getElementById('message').textContent = "請填寫所有欄位。";
+                return;
+            }
+
+            // 取得 Firebase 實例並將資料寫入 Realtime Database
+            const scoreRef = ref(database, 'scores');
+            const newScoreRef = push(scoreRef);
+            set(newScoreRef, {
+                name: studentName,
+                score: studentScore
+            }).then(() => {
+                document.getElementById('message').textContent = "成績已成功提交！";
+                document.getElementById('scoreForm').reset(); // 重設表單
+            }).catch((error) => {
+                document.getElementById('message').textContent = "提交失敗，請稍後再試。";
+                console.error("Error writing to Firebase: ", error);
+            });
+        });
+
+        // 限制成績輸入範圍 (0-100)，如果數字超過範圍，會自動設定為範圍內的值
+        document.getElementById('studentScore').addEventListener('input', function(event) {
+            const scoreInput = event.target;
+            let scoreValue = parseInt(scoreInput.value, 10);
+
+            // 限制成績的範圍
+            if (scoreValue < 0) {
+                scoreInput.value = 0;
+            } else if (scoreValue > 100) {
+                scoreInput.value = 100;
+            }
+        });
+
+        // 實時監聽 Firebase 中 scores 節點的變動
+        const scoreListRef = ref(database, 'scores');
+        onValue(scoreListRef, (snapshot) => {
+            const scores = snapshot.val();
+            const scoreItemsContainer = document.getElementById('scoreItems');
+
+            // 清空現有的顯示資料
+            scoreItemsContainer.innerHTML = '';
+
+            // 如果有成績資料，則顯示出來
+            if (scores) {
+                Object.keys(scores).forEach(key => {
+                    const score = scores[key];
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${score.name}: ${score.score} 分`;
+                    scoreItemsContainer.appendChild(listItem);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

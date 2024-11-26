@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google 登入</title>
+    <!-- 引入 Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js" type="module"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js" type="module"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            padding: 10px 20px;
+            margin-top: 20px;
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #357ae8;
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 16px;
+            color: green;
+        }
+        .user-info {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Google 登入</h1>
+        <button id="loginBtn">使用 Google 登入</button>
+
+        <div id="userInfo" class="user-info" style="display: none;">
+            <h3>登入成功！</h3>
+            <p>姓名: <span id="userName"></span></p>
+            <p>電子郵件: <span id="userEmail"></span></p>
+            <img id="userPhoto" src="" alt="User Photo" style="width: 100px; height: 100px; border-radius: 50%;">
+        </div>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <script type="module">
+        // Import Firebase SDK 模組
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+        // Firebase 配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyDdLQpES2P4NfhxzzoOPkAE80hJ5bGWnDE", 
+            authDomain: "web1113-41041225.firebaseapp.com",
+            projectId: "web1113-41041225",
+            storageBucket: "web1113-41041225.appspot.com",
+            messagingSenderId: "72233532454",
+            appId: "1:72233532454:web:5c66a7424f8b83b7ca7ae7"
+        };
+
+        // 初始化 Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // 監聽用戶登入狀態
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // 如果用戶已登入，顯示用戶資訊
+                document.getElementById('userInfo').style.display = 'block';
+                document.getElementById('userName').textContent = user.displayName;
+                document.getElementById('userEmail').textContent = user.email;
+                document.getElementById('userPhoto').src = user.photoURL;
+                document.getElementById('message').textContent = '歡迎，' + user.displayName + '！';
+            } else {
+                // 用戶未登入，顯示登入按鈕
+                document.getElementById('userInfo').style.display = 'none';
+                document.getElementById('message').textContent = '';
+            }
+        });
+
+        // 點擊登入按鈕時觸發 Google 登入
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    // 成功登入
+                    const user = result.user;
+                    console.log("用戶資訊: ", user);
+                })
+                .catch((error) => {
+                    // 顯示錯誤
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    const email = error.email;
+                    const credential = error.credential;
+                    console.error("登入錯誤: ", errorMessage);
+                    document.getElementById('message').textContent = "登入失敗：" + errorMessage;
+                });
+        });
+
+        // 登出功能
+        function logout() {
+            signOut(auth).then(() => {
+                // 登出後的操作
+                console.log("用戶已登出");
+            }).catch((error) => {
+                console.error("登出錯誤: ", error);
+            });
+        }
+
+    </script>
+</body>
+</html>
